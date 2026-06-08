@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+.env
+xau_bot.env
+work/*.json

@@ -1,0 +1,54 @@
+name: XAU Telegram Alert
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/5 * * * *"
+
+concurrency:
+  group: xau-telegram-alert
+  cancel-in-progress: true
+
+jobs:
+  check-xau:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Restore alert cooldown state
+        uses: actions/cache@v4
+        with:
+          path: work/xau_alert_state.json
+          key: xau-alert-state-${{ github.run_id }}
+          restore-keys: |
+            xau-alert-state-
+
+      - name: Prepare state folder
+        run: |
+          mkdir -p work
+          if [ ! -f work/xau_alert_state.json ]; then
+            printf '{}' > work/xau_alert_state.json
+          fi
+
+      - name: Check XAUUSDT and send Telegram if setup exists
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SYMBOL: XAUUSDT
+          BYBIT_CATEGORY: linear
+          ACCOUNT_BALANCE: "50"
+          MARGIN_USDT: "5"
+          LEVERAGE: "10"
+          MAX_RISK_USDT: "0.50"
+          MIN_RR: "1.5"
+          COOLDOWN_MINUTES: "30"
+          STATE_FILE: work/xau_alert_state.json
+        run: python3 outputs/xau_telegram_alert_bot.py --once
