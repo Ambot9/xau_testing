@@ -20,6 +20,7 @@ import math
 import os
 import sys
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
@@ -28,7 +29,9 @@ from typing import Any
 
 
 BYBIT_KLINE_URL = "https://api.bybit.com/v5/market/kline"
+GATE_FUTURES_CANDLE_URL = "https://api.gateio.ws/api/v4/futures/usdt/candlesticks"
 TELEGRAM_SEND_URL = "https://api.telegram.org/bot{token}/sendMessage"
+BYBIT_INTERVALS = {"1m": "1", "1h": "60", "4h": "240"}
 
 
 @dataclass(frozen=True)
@@ -44,6 +47,7 @@ class Candle:
 @dataclass(frozen=True)
 class Config:
     symbol: str
+    gate_contract: str
     category: str
     check_seconds: int
     account_balance: float
@@ -71,6 +75,7 @@ def env_int(name: str, default: int) -> int:
 def load_config() -> Config:
     return Config(
         symbol=os.getenv("SYMBOL", "XAUUSDT").upper(),
+        gate_contract=os.getenv("GATE_CONTRACT", "XAU_USDT").upper(),
         category=os.getenv("BYBIT_CATEGORY", "linear"),
         check_seconds=env_int("CHECK_SECONDS", 60),
         account_balance=env_float("ACCOUNT_BALANCE", 50.0),
@@ -119,6 +124,42 @@ def fetch_bybit_klines(config: Config, interval: str, limit: int) -> list[Candle
         for row in rows
     ]
     return sorted(candles, key=lambda candle: candle.start_ms)
+
+
+def fetch_gate_klines(config: Config, interval: str, limit: int) -> list[Candle]:
+    rows = http_get_json(
+        GATE_FUTURES_CANDLE_URL,
+        {
+            "contract": config.gate_contract,
+            "interval": interval,
+            "limit": limit,
+        },
+    )
+    candles = [
+        Candle(
+            start_ms=int(row["t"]) * 1000,
+            open=float(row["o"]),
+            high=float(row["h"]),
+            low=float(row["l"]),
+            close=float(row["c"]),
+            volume=float(row["v"]),
+        )
+        for row in rows
+    ]
+    return sorted(candles, key=lambda candle: candle.start_ms)
+
+
+def fetch_klines(config: Config, interval: str, limit: int) -> list[Candle]:
+    bybit_interval = BYBIT_INTERVALS.get(interval, interval)
+    try:
+        return fetch_bybit_klines(config, bybit_interval, limit)
+    except urllib.error.HTTPError as error:
+        if error.code != 403:
+            raise
+        print(f"Bybit returned 403 for {config.symbol}; using Gate.io {config.gate_contract} fallback", file=sys.stderr)
+    except urllib.error.URLError as error:
+        print(f"Bybit unavailable for {config.symbol}: {error}; using Gate.io {config.gate_contract} fallback", file=sys.stderr)
+    return fetch_gate_klines(config, interval, limit)
 
 
 def ema(values: list[float], period: int) -> float:
@@ -329,9 +370,9 @@ def mark_alerted(config: Config, signal: dict[str, Any], now: int) -> None:
 
 
 def run_once(config: Config, dry_run: bool = False, send_no_trade: bool = False) -> dict[str, Any]:
-    candles_4h = fetch_bybit_klines(config, "240", 240)
-    candles_1h = fetch_bybit_klines(config, "60", 160)
-    candles_1m = fetch_bybit_klines(config, "1", 120)
+    candles_4h = fetch_klines(config, "4h", 240)
+    candles_1h = fetch_klines(config, "1h", 160)
+    candles_1m = fetch_klines(config, "1m", 120)
     signal = analyze(config, candles_4h, candles_1h, candles_1m)
     message = format_signal(signal, config)
 

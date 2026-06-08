@@ -12,6 +12,8 @@ It checks:
 
 The bot only sends alerts. It does not place trades.
 
+Market data uses Bybit first. If Bybit blocks GitHub Actions with `403 Forbidden`, the bot falls back to Gate.io `XAU_USDT` public futures candles.
+
 ## GitHub Secrets
 
 Add these repository secrets:

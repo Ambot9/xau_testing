@@ -1,5 +1,8 @@
 name: XAU Telegram Alert
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 on:
   workflow_dispatch:
   schedule:
@@ -44,6 +47,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           SYMBOL: XAUUSDT
           BYBIT_CATEGORY: linear
+          GATE_CONTRACT: XAU_USDT
           ACCOUNT_BALANCE: "50"
           MARGIN_USDT: "5"
           LEVERAGE: "10"
