@@ -297,38 +297,39 @@ def analyze(config: Config, candles_4h: list[Candle], candles_1h: list[Candle], 
 
 def format_signal(signal: dict[str, Any], config: Config) -> str:
     checks = signal["checks"]
-    status = "BUY SETUP FOUND" if signal["allowed"] else "NO TRADE"
-    reason_text = "\n".join(f"- {reason}" for reason in signal["reasons"]) or "- Conditions not aligned"
-    check_text = "\n".join(f"- {name}: {'yes' if value else 'no'}" for name, value in checks.items())
+    status = "រកឃើញឱកាស BUY" if signal["allowed"] else "មិនមានសញ្ញាចូល trade"
+    bias = "BUY" if signal["allowed"] else "NO TRADE"
+    reason_text = "\n".join(f"- {reason}" for reason in signal["reasons"]) or "- លក្ខខណ្ឌមិនទាន់ត្រូវគ្នា"
+    check_text = "\n".join(f"- {name}: {'បាទ/ចាស' if value else 'ទេ'}" for name, value in checks.items())
     return (
         f"{status}\n"
-        f"Pair: {signal['symbol']} Futures\n"
-        f"Bias: {signal['bias']}\n"
+        f"គូរ: {signal['symbol']} Futures\n"
+        f"ទិសដៅ: {bias}\n"
         f"4H EMA200: {signal['ema_200']:.2f}\n"
-        f"1H Zone: {signal['zone_low']:.2f}-{signal['zone_high']:.2f}\n"
-        f"Entry: {signal['entry']:.2f}\n"
-        f"Stop Loss: {signal['stop']:.2f}\n"
+        f"តំបន់ 1H: {signal['zone_low']:.2f}-{signal['zone_high']:.2f}\n"
+        f"តម្លៃចូល: {signal['entry']:.2f}\n"
+        f"បញ្ឈប់ខាត: {signal['stop']:.2f}\n"
         f"TP1: {signal['tp1']:.2f}\n"
         f"TP2: {signal['tp2']:.2f}\n"
         f"Risk/Reward: 1:{signal['rr']:.2f}\n"
-        f"Risk: ${signal['risk_usdt']:.2f} / max ${config.max_risk_usdt:.2f}\n"
-        f"Margin: ${config.margin_usdt:.2f} at {config.leverage:g}x = ${signal['position_notional']:.2f} position\n"
-        f"Invalid If: 1M candle closes below {signal['invalid_if']:.2f}\n\n"
-        f"Reasons:\n{reason_text}\n\n"
-        f"Checks:\n{check_text}\n\n"
-        "Reminder: this is an alert, not guaranteed profit. Use stop loss."
+        f"ហានិភ័យ: ${signal['risk_usdt']:.2f} / អតិបរមា ${config.max_risk_usdt:.2f}\n"
+        f"Margin: ${config.margin_usdt:.2f} នៅ leverage {config.leverage:g}x = ទំហំ position ${signal['position_notional']:.2f}\n"
+        f"លុបចោលសញ្ញា បើ candle 1M បិទក្រោម {signal['invalid_if']:.2f}\n\n"
+        f"ហេតុផល:\n{reason_text}\n\n"
+        f"ការត្រួតពិនិត្យ:\n{check_text}\n\n"
+        "រំលឹក: នេះគ្រាន់តែជា alert មិនមែនធានាចំណេញទេ។ ត្រូវប្រើ stop loss ជានិច្ច។"
     )
 
 
 def format_startup_message(config: Config) -> str:
     return (
-        "XAU alert bot started\n"
-        f"Pair: {config.symbol} Futures\n"
-        f"Fallback Data: Gate.io {config.gate_contract}\n"
+        "Bot alert XAU បានចាប់ផ្តើមដំណើរការ\n"
+        f"គូរ: {config.symbol} Futures\n"
+        f"Data បម្រុង: Gate.io {config.gate_contract}\n"
         f"Margin: ${config.margin_usdt:.2f}\n"
         f"Leverage: {config.leverage:g}x\n"
-        f"Max Risk: ${config.max_risk_usdt:.2f}\n"
-        "Status: checking market conditions now"
+        f"ហានិភ័យអតិបរមា: ${config.max_risk_usdt:.2f}\n"
+        "ស្ថានភាព: កំពុងពិនិត្យលក្ខខណ្ឌទីផ្សារឥឡូវនេះ"
     )
 
 
