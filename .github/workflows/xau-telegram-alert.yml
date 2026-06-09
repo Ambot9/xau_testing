@@ -5,6 +5,15 @@ env:
 
 on:
   workflow_dispatch:
+    inputs:
+      send_status:
+        description: "Send Telegram status even when there is no trade"
+        required: true
+        default: "true"
+        type: choice
+        options:
+          - "true"
+          - "false"
   schedule:
     - cron: "*/5 * * * *"
 
@@ -55,4 +64,9 @@ jobs:
           MIN_RR: "1.5"
           COOLDOWN_MINUTES: "30"
           STATE_FILE: work/xau_alert_state.json
-        run: python3 outputs/xau_telegram_alert_bot.py --once
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.send_status }}" = "true" ]; then
+            python3 outputs/xau_telegram_alert_bot.py --once --send-no-trade
+          else
+            python3 outputs/xau_telegram_alert_bot.py --once
+          fi
