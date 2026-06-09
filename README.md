@@ -39,6 +39,8 @@ In GitHub:
 Actions > XAU Telegram Alert > Run workflow
 ```
 
+Manual runs can send a startup message and a no-trade status message so you can confirm Telegram is connected. Scheduled runs stay quiet unless a real BUY setup exists.
+
 ## Schedule
 
 The workflow runs every 5 minutes:

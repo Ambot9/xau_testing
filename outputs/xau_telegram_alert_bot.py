@@ -320,6 +320,18 @@ def format_signal(signal: dict[str, Any], config: Config) -> str:
     )
 
 
+def format_startup_message(config: Config) -> str:
+    return (
+        "XAU alert bot started\n"
+        f"Pair: {config.symbol} Futures\n"
+        f"Fallback Data: Gate.io {config.gate_contract}\n"
+        f"Margin: ${config.margin_usdt:.2f}\n"
+        f"Leverage: {config.leverage:g}x\n"
+        f"Max Risk: ${config.max_risk_usdt:.2f}\n"
+        "Status: checking market conditions now"
+    )
+
+
 def send_telegram(config: Config, text: str) -> None:
     if not config.telegram_token or not config.telegram_chat_id:
         raise RuntimeError("Missing TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID")
@@ -409,6 +421,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="XAUUSDT Telegram alert bot")
     parser.add_argument("--once", action="store_true", help="Check one time and exit")
     parser.add_argument("--dry-run", action="store_true", help="Print message instead of sending Telegram")
+    parser.add_argument("--send-startup", action="store_true", help="Send a Telegram startup message before checking")
     parser.add_argument("--send-no-trade", action="store_true", help="Also send Telegram when conditions are not aligned")
     parser.add_argument("--self-test", action="store_true", help="Run offline logic test")
     args = parser.parse_args()
@@ -418,6 +431,12 @@ def main() -> int:
         return 0
 
     config = load_config()
+    if args.send_startup:
+        if args.dry_run:
+            print(format_startup_message(config))
+        else:
+            send_telegram(config, format_startup_message(config))
+
     if args.once:
         run_once(config, dry_run=args.dry_run, send_no_trade=args.send_no_trade)
         return 0
